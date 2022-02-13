@@ -1,0 +1,35 @@
+cd Projects/
+git clone https://github.com/xwjim/DocRE-Rec.git
+
+cd DocRE-Rec/
+
+conda create --name docRE python==3.7
+conda activate docRE
+
+mkdir data
+mkdir prepro_data
+
+mv ../../Downloads/dev.json data/.
+mv ../../Downloads/rel_info.json data/.
+mv ../../Downloads/test.json data/.
+mv ../../Downloads/train_annotated.json data/.
+mv ../../Downloads/train_distant.json data/.
+mv ../../Downloads/DocRED_baseline_metadata-20220212T131524Z-001.zip data/.
+
+cd data
+unzip DocRED_baseline_metadata-20220212T131524Z-001.zip 
+mv DocRED_baseline_metadata/* ../prepro_data/.
+
+cd ..
+
+python3 gen_data.py --in_path data --out_path prepro_data
+
+python3 gen_graph_data.py --in_path prepro_data --worker_num 6
+
+#in all .py scripts added:
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+#and changed .cuda() to .to(device)
+
+python3 train.py --model_name DynGraph --save_name checkpoint_DynGraph --train_prefix dev_train --test_prefix dev_dev
+
+python3 train.py --model_name DynGraph --save_name checkpoint_DynGraph --train_prefix dev_train --test_prefix dev_dev --eval_model True --rel_theta 0.3601
